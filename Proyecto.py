@@ -1,6 +1,6 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
-from PIL import Image as PILImage, ImageOps, ImageTk
+from tkinter import filedialog, messagebox, simpledialog
+from PIL import Image as PILImage, ImageOps, ImageTk, ImageFilter
 from abc import ABC, abstractmethod
 
 # ----- Lógica POO de imagen y filtros -----
@@ -32,26 +32,55 @@ class FiltroInversion(Filtro):
         if imagen.imagen:
             imagen.imagen = ImageOps.invert(imagen.imagen)
 
+class FiltroDesenfoque(Filtro):
+    def aplicar(self, imagen: Imagen):
+        if imagen.imagen:
+            imagen.imagen = imagen.imagen.filter(ImageFilter.BLUR)
+
+class FiltroBinarizacion(Filtro):
+    def aplicar(self, imagen: Imagen):
+        if imagen.imagen:
+            imagen.imagen = imagen.imagen.convert("L").point(lambda x: 0 if x < 128 else 255, '1').convert("RGB")
+
+class FiltroRedimension(Filtro):
+    def __init__(self, ancho, alto):
+        self.ancho = ancho
+        self.alto = alto
+
+    def aplicar(self, imagen: Imagen):
+        if imagen.imagen:
+            imagen.imagen = imagen.imagen.resize((self.ancho, self.alto))
+
+class FiltroRotacion(Filtro):
+    def __init__(self, angulo):
+        self.angulo = angulo
+
+    def aplicar(self, imagen: Imagen):
+        if imagen.imagen:
+            imagen.imagen = imagen.imagen.rotate(self.angulo, expand=True)
+
 # ----- Interfaz Gráfica con Tkinter -----
 class EditorImagenApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Editor de Imágenes - Filtros Básicos")
+        self.root.title("Editor de Imágenes - Filtros Avanzados")
 
         self.imagen = Imagen()
 
         # Botones
-        self.btn_cargar = tk.Button(root, text="Cargar Imagen", command=self.cargar_imagen)
-        self.btn_cargar.pack()
+        botones = [
+            ("Cargar Imagen", self.cargar_imagen),
+            ("Aplicar Filtro Grises", self.aplicar_grises),
+            ("Aplicar Filtro Inversión", self.aplicar_inversion),
+            ("Aplicar Desenfoque", self.aplicar_desenfoque),
+            ("Aplicar Binarización", self.aplicar_binarizacion),
+            ("Redimensionar Imagen", self.aplicar_redimension),
+            ("Rotar Imagen", self.aplicar_rotacion),
+            ("Guardar Imagen", self.guardar_imagen)
+        ]
 
-        self.btn_grises = tk.Button(root, text="Aplicar Filtro Grises", command=self.aplicar_grises)
-        self.btn_grises.pack()
-
-        self.btn_invertir = tk.Button(root, text="Aplicar Filtro Inversión", command=self.aplicar_inversion)
-        self.btn_invertir.pack()
-
-        self.btn_guardar = tk.Button(root, text="Guardar Imagen", command=self.guardar_imagen)
-        self.btn_guardar.pack()
+        for texto, comando in botones:
+            tk.Button(root, text=texto, command=comando).pack()
 
         self.canvas = tk.Label(root)
         self.canvas.pack()
@@ -60,7 +89,7 @@ class EditorImagenApp:
         if self.imagen.imagen:
             img_tk = ImageTk.PhotoImage(self.imagen.imagen.resize((400, 400)))
             self.canvas.config(image=img_tk)
-            self.canvas.image = img_tk  # Mantener referencia
+            self.canvas.image = img_tk
 
     def cargar_imagen(self):
         archivo = filedialog.askopenfilename(filetypes=[("Imágenes", "*.jpg *.png *.jpeg *.bmp")])
@@ -68,21 +97,35 @@ class EditorImagenApp:
             self.imagen.cargar(archivo)
             self.mostrar_imagen()
 
-    def aplicar_grises(self):
+    def aplicar_filtro(self, filtro):
         if self.imagen.imagen:
-            filtro = FiltroGrises()
             filtro.aplicar(self.imagen)
             self.mostrar_imagen()
         else:
             messagebox.showwarning("Advertencia", "Primero debes cargar una imagen.")
 
+    def aplicar_grises(self):
+        self.aplicar_filtro(FiltroGrises())
+
     def aplicar_inversion(self):
-        if self.imagen.imagen:
-            filtro = FiltroInversion()
-            filtro.aplicar(self.imagen)
-            self.mostrar_imagen()
-        else:
-            messagebox.showwarning("Advertencia", "Primero debes cargar una imagen.")
+        self.aplicar_filtro(FiltroInversion())
+
+    def aplicar_desenfoque(self):
+        self.aplicar_filtro(FiltroDesenfoque())
+
+    def aplicar_binarizacion(self):
+        self.aplicar_filtro(FiltroBinarizacion())
+
+    def aplicar_redimension(self):
+        ancho = simpledialog.askinteger("Redimensionar", "Nuevo ancho:")
+        alto = simpledialog.askinteger("Redimensionar", "Nueva altura:")
+        if ancho and alto:
+            self.aplicar_filtro(FiltroRedimension(ancho, alto))
+
+    def aplicar_rotacion(self):
+        angulo = simpledialog.askfloat("Rotar", "Ángulo de rotación (grados):")
+        if angulo is not None:
+            self.aplicar_filtro(FiltroRotacion(angulo))
 
     def guardar_imagen(self):
         if self.imagen.imagen:
