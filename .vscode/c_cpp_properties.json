@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "name": "MSVC",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "G:/opencv/build/include",
+        "G:/opencv/build/include/opencv2"
+      ],
+      "defines": [
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/<version>/bin/Hostx64/x64/cl.exe",
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "windows-msvc-x64"
+    }
+  ],
+  "version": 4
+}
